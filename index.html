@@ -3,30 +3,396 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>A-To-The-Z Family Financial</title>
-    <!-- Firebase SDKs (Compat version for single-file simplicity) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <title>Family Budget Tracker</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --danger: #e74c3c; --warning: #f39c12; --light: #f4f7f6; --daddy: #2980b9; --mommy: #8e44ad; }
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --light: #f4f7f6;
+            --daddy: #2980b9;
+            --mommy: #8e44ad;
+        }
+
         * { box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
-        body { margin: 0; background-color: var(--light); color: #333; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        
-        /* --- SCREENS --- */
-        .full-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; padding: 20px; text-align: center; color: white; }
-        .card { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; color: #333; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; }
-        
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 5px; }
+
+        body {
+            margin: 0;
+            background-color: var(--light);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- FULL SCREEN OVERLAYS --- */
+        .full-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 350px;
+            color: #333;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
         .btn-primary { background: var(--accent); color: white; }
-        .btn-update { background: var(--warning); color: white; }
         .btn-outline { background: #eee; color: #333; margin-top: 10px; }
         .btn-daddy { background: var(--daddy); color: white; margin-bottom: 10px; }
         .btn-mommy { background: var(--mommy); color: white; }
 
-        #main-app { display: none; width: 100%; max-width: 500px; padding-bottom: 50px; }
-        .navbar { background: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .nav-left { display: flex; align-items: center; gap: 10px; }
-        .home-icon { font-size: 24px; background: #f0f0f0; padding: 8px; border-radius: 10px; cursor: pointer; }
-        
-        .dro
+        /* --- NAVIGATION --- */
+        #main-app { display: none; width: 100%; max-width: 500px; }
+
+        .navbar {
+            background: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+
+        .home-icon {
+            font-size: 24px;
+            text-decoration: none;
+            background: #f0f0f0;
+            padding: 8px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .dropdown { position: relative; }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 45px;
+            background: white;
+            min-width: 180px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .dropdown-content a {
+            display: block;
+            padding: 15px;
+            text-decoration: none;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            font-size: 15px;
+        }
+
+        /* --- CHECKLIST --- */
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            margin: 10px 15px;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .checkbox-round {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            appearance: none;
+            cursor: pointer;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .checkbox-round:checked {
+            background-color: var(--success);
+            border-color: var(--success);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E");
+        }
+
+        .item-details { flex-grow: 1; }
+        .item-name { font-weight: 600; display: block; }
+        .item-sub { font-size: 11px; color: #888; }
+        .item-price { font-weight: bold; color: var(--primary); }
+
+        .paid-item { opacity: 0.5; }
+        .paid-item .item-name { text-decoration: line-through; }
+
+        .summary-card { background: white; margin: 15px; padding: 20px; border-radius: 15px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. LOGIN PAGE -->
+    <div id="page-login" class="full-screen">
+        <div class="card">
+            <h2 style="margin:0">Family Safe</h2>
+            <p style="color:#666">Please enter password</p>
+            <input type="password" id="input-pass" placeholder="Password">
+            <button class="btn btn-primary" onclick="verifyPassword()">Login</button>
+            <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top:10px;">Incorrect Password</p>
+        </div>
+    </div>
+
+    <!-- 2. USER SELECTION -->
+    <div id="page-user-select" class="full-screen hidden">
+        <div class="card">
+            <h3>Who is using this?</h3>
+            <button class="btn btn-daddy" onclick="selectUser('Daddy')">DADDY</button>
+            <button class="btn btn-mommy" onclick="selectUser('Mommy')">MOMMY</button>
+        </div>
+    </div>
+
+    <!-- 3. MAIN APP -->
+    <div id="main-app">
+        <nav class="navbar">
+            <div class="nav-left">
+                <div class="home-icon" onclick="showSection('home')">🏠</div>
+                <span id="display-username" style="font-weight:bold; font-size: 14px;">User</span>
+            </div>
+            <div class="dropdown">
+                <button onclick="toggleDropdown()" style="background:none; border:none; font-size:24px;">☰</button>
+                <div id="nav-dropdown" class="dropdown-content">
+                    <a href="#" onclick="showSection('home')">🏠 Summary</a>
+                    <a href="#" onclick="showSection('checklist')">✅ Checklist</a>
+                    <a href="#" onclick="showSection('add')">➕ Add Commitment</a>
+                    <a href="#" onclick="showSection('settings')">⚙️ Settings</a>
+                    <a href="#" onclick="logout()" style="color:var(--danger)">🚪 Logout</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- SECTION: SUMMARY (HOME) -->
+        <div id="section-home" class="content-section">
+            <h3 style="margin: 20px 15px 5px">Monthly Summary</h3>
+            <div class="summary-card">
+                <div class="summary-row">
+                    <span>Total Paid</span>
+                    <span id="combined-paid" style="font-weight:bold; color:var(--success)">RM 0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>Total Due</span>
+                    <span id="combined-due" style="font-weight:bold; color:var(--danger)">RM 0.00</span>
+                </div>
+                <hr style="border:0; border-top:1px solid #eee; margin-bottom:12px;">
+                <div class="summary-row" style="font-size:18px; font-weight:bold">
+                    <span>Balance Left</span>
+                    <span id="combined-left">RM 0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: CHECKLIST -->
+        <div id="section-checklist" class="content-section hidden">
+            <h3 style="margin: 20px 15px 5px">My Commitment List</h3>
+            <div id="checklist-container"></div>
+        </div>
+
+        <!-- SECTION: ADD -->
+        <div id="section-add" class="content-section hidden">
+            <h3 style="margin: 20px 15px 5px">Add New Item</h3>
+            <div class="summary-card">
+                <label style="font-size:13px; font-weight:bold">Description</label>
+                <input type="text" id="add-desc" placeholder="e.g. TNB Bill">
+                
+                <div style="display:flex; gap:10px">
+                    <div style="flex:1">
+                        <label style="font-size:11px">Daddy RM</label>
+                        <input type="number" id="add-dad" placeholder="0" oninput="updateAddTotal()">
+                    </div>
+                    <div style="flex:1">
+                        <label style="font-size:11px">Mommy RM</label>
+                        <input type="number" id="add-mom" placeholder="0" oninput="updateAddTotal()">
+                    </div>
+                </div>
+                <p style="text-align:center; font-weight:bold">Total: RM <span id="add-total-display">0.00</span></p>
+                <button class="btn btn-primary" onclick="submitCommitment()">Add Submit</button>
+                <button class="btn btn-outline" onclick="showSection('home')">Back to Home</button>
+            </div>
+        </div>
+
+        <!-- SECTION: SETTINGS -->
+        <div id="section-settings" class="content-section hidden">
+            <h3 style="margin: 20px 15px 5px">Monthly Incomes</h3>
+            <div class="summary-card">
+                <label style="font-size:12px">Daddy's Monthly Income (RM)</label>
+                <input type="number" id="set-dad-inc">
+                <label style="font-size:12px">Mommy's Monthly Income (RM)</label>
+                <input type="number" id="set-mom-inc">
+                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                <button class="btn btn-outline" onclick="showSection('home')">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- APP STATE ---
+        let state = JSON.parse(localStorage.getItem('family_budget_app')) || {
+            incomes: { Daddy: 0, Mommy: 0 },
+            commitments: []
+        };
+        let activeUser = "";
+
+        // --- NAVIGATION & AUTH ---
+        function verifyPassword() {
+            const pass = document.getElementById('input-pass').value;
+            if (pass === "Ayleenzenia") {
+                document.getElementById('input-pass').value = ""; // Clear for next time
+                document.getElementById('page-login').classList.add('hidden');
+                document.getElementById('page-user-select').classList.remove('hidden');
+                document.getElementById('login-error').style.display = 'none';
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function selectUser(user) {
+            activeUser = user;
+            document.getElementById('display-username').innerText = user;
+            document.getElementById('display-username').style.color = (user === 'Daddy') ? 'var(--daddy)' : 'var(--mommy)';
+            document.getElementById('page-user-select').classList.add('hidden');
+            document.getElementById('main-app').style.display = 'block';
+            refreshUI();
+        }
+
+        function logout() {
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('page-login').classList.remove('hidden');
+            toggleDropdown();
+        }
+
+        function toggleDropdown() {
+            const dd = document.getElementById('nav-dropdown');
+            dd.style.display = (dd.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById('section-' + id).classList.remove('hidden');
+            const dd = document.getElementById('nav-dropdown');
+            if (dd.style.display === 'block') toggleDropdown();
+            refreshUI();
+        }
+
+        // --- LOGIC ---
+        function updateAddTotal() {
+            const d = parseFloat(document.getElementById('add-dad').value) || 0;
+            const m = parseFloat(document.getElementById('add-mom').value) || 0;
+            document.getElementById('add-total-display').innerText = (d + m).toFixed(2);
+        }
+
+        function submitCommitment() {
+            const desc = document.getElementById('add-desc').value;
+            const d = parseFloat(document.getElementById('add-dad').value) || 0;
+            const m = parseFloat(document.getElementById('add-mom').value) || 0;
+
+            if (!desc) return alert("Enter description");
+
+            state.commitments.push({ id: Date.now(), desc, Daddy: d, Mommy: m, paid: false });
+            save();
+            document.getElementById('add-desc').value = "";
+            document.getElementById('add-dad').value = "";
+            document.getElementById('add-mom').value = "";
+            showSection('checklist');
+        }
+
+        function togglePaid(id) {
+            const item = state.commitments.find(c => c.id === id);
+            item.paid = !item.paid;
+            save();
+        }
+
+        function saveSettings() {
+            state.incomes.Daddy = parseFloat(document.getElementById('set-dad-inc').value) || 0;
+            state.incomes.Mommy = parseFloat(document.getElementById('set-mom-inc').value) || 0;
+            save();
+            alert("Income Saved!");
+            showSection('home');
+        }
+
+        function save() {
+            localStorage.setItem('family_budget_app', JSON.stringify(state));
+            refreshUI();
+        }
+
+        function refreshUI() {
+            let totalPaid = 0;
+            let totalDue = 0;
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = "";
+
+            state.commitments.forEach(item => {
+                const combinedTotal = item.Daddy + item.Mommy;
+                const myShare = item[activeUser];
+                
+                if (item.paid) totalPaid += combinedTotal;
+                else totalDue += combinedTotal;
+
+                const div = document.createElement('div');
+                div.className = `checklist-item ${item.paid ? 'paid-item' : ''}`;
+                div.innerHTML = `
+                    <input type="checkbox" class="checkbox-round" ${item.paid ? 'checked' : ''} onchange="togglePaid(${item.id})">
+                    <div class="item-details">
+                        <span class="item-name">${item.desc}</span>
+                        <span class="item-sub">My Share: RM ${myShare.toFixed(2)} | Total: RM ${combinedTotal.toFixed(2)}</span>
+                    </div>
+                    <div class="item-price">RM ${combinedTotal.toFixed(2)}</div>
+                `;
+                container.appendChild(div);
+            });
+
+            const totalIncome = state.incomes.Daddy + state.incomes.Mommy;
+            document.getElementById('combined-paid').innerText = "RM " + totalPaid.toFixed(2);
+            document.getElementById('combined-due').innerText = "RM " + totalDue.toFixed(2);
+            document.getElementById('combined-left').innerText = "RM " + (totalIncome - totalPaid).toFixed(2);
+            
+            document.getElementById('set-dad-inc').value = state.incomes.Daddy;
+            document.getElementById('set-mom-inc').value = state.incomes.Mommy;
+        }
+    </script>
+</body>
+</html>
