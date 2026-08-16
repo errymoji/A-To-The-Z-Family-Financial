@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Family Budget Tracker</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --light: #f4f7f6;
+            --daddy: #2980b9;
+            --mommy: #8e44ad;
+        }
+
+        * { box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
+
+        body {
+            margin: 0;
+            background-color: var(--light);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- SCREENS --- */
+        .full-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            color: #333;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-update { background: var(--warning); color: white; }
+        .btn-outline { background: #eee; color: #333; margin-top: 10px; }
+        .btn-daddy { background: var(--daddy); color: white; margin-bottom: 10px; }
+        .btn-mommy { background: var(--mommy); color: white; }
+
+        /* --- NAVIGATION --- */
+        #main-app { display: none; width: 100%; max-width: 500px; padding-bottom: 50px; }
+
+        .navbar {
+            background: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .home-icon { font-size: 24px; background: #f0f0f0; padding: 8px; border-radius: 10px; cursor: pointer; }
+
+        .dropdown { position: relative; }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 45px;
+            background: white;
+            min-width: 180px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .dropdown-content a { display: block; padding: 15px; text-decoration: none; color: #333; border-bottom: 1px solid #eee; }
+
+        /* --- LISTS & CARDS --- */
+        .summary-card { background: white; margin: 15px; padding: 20px; border-radius: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            background: white;
+            margin: 10px 15px;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .edit-list-item { flex-direction: column; align-items: flex-start; }
+        .edit-actions { display: flex; gap: 10px; width: 100%; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+        
+        .action-btn { padding: 8px 15px; border-radius: 8px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; flex: 1; }
+        .btn-edit { background: var(--accent); color: white; }
+        .btn-del { background: var(--danger); color: white; }
+
+        .checkbox-round { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #ddd; appearance: none; margin-right: 15px; }
+        .checkbox-round:checked { background-color: var(--success); border-color: var(--success); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E"); }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN -->
+    <div id="page-login" class="full-screen">
+        <div class="card">
+            <h2>Family Safe</h2>
+            <input type="password" id="input-pass" placeholder="Password">
+            <button class="btn btn-primary" onclick="verifyPassword()">Login</button>
+            <p id="login-error" style="color:var(--danger); display:none; margin-top:10px;">Incorrect Password</p>
+        </div>
+    </div>
+
+    <!-- USER SELECT -->
+    <div id="page-user-select" class="full-screen hidden">
+        <div class="card">
+            <h3>Who is using this?</h3>
+            <button class="btn btn-daddy" onclick="selectUser('Daddy')">DADDY</button>
+            <button class="btn btn-mommy" onclick="selectUser('Mommy')">MOMMY</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="main-app">
+        <nav class="navbar">
+            <div style="display:flex; align-items:center; gap:10px">
+                <div class="home-icon" onclick="showSection('home')">🏠</div>
+                <span id="display-username" style="font-weight:bold; font-size:14px">User</span>
+            </div>
+            <div class="dropdown">
+                <button onclick="toggleDropdown()" style="background:none; border:none; font-size:24px">☰</button>
+                <div id="nav-dropdown" class="dropdown-content">
+                    <a onclick="showSection('home')">🏠 Summary</a>
+                    <a onclick="showSection('checklist')">✅ Checklist</a>
+                    <a onclick="showSection('add')">➕ Add Commitment</a>
+                    <a onclick="showSection('settings')">⚙️ Settings</a>
+                    <a onclick="logout()" style="color:var(--danger)">🚪 Logout</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- SECTION: HOME -->
+        <div id="section-home" class="content-section">
+            <h3 style="margin:20px 15px 5px">Monthly Summary</h3>
+            <div class="summary-card">
+                <div class="summary-row"><span>Total Paid</span><span id="combined-paid" style="color:var(--success); font-weight:bold">RM 0.00</span></div>
+                <div class="summary-row"><span>Total Due</span><span id="combined-due" style="color:var(--danger); font-weight:bold">RM 0.00</span></div>
+                <hr style="border:0; border-top:1px solid #eee; margin-bottom:12px">
+                <div class="summary-row" style="font-size:18px; font-weight:bold"><span>Balance Left</span><span id="combined-left">RM 0.00</span></div>
+            </div>
+        </div>
+
+        <!-- SECTION: CHECKLIST -->
+        <div id="section-checklist" class="content-section hidden">
+            <h3 style="margin:20px 15px 5px">Checklist</h3>
+            <div id="checklist-container"></div>
+        </div>
+
+        <!-- SECTION: ADD / MANAGE -->
+        <div id="section-add" class="content-section hidden">
+            <h3 style="margin:20px 15px 5px" id="form-title">Add Commitment</h3>
+            <div class="summary-card" id="form-container">
+                <input type="hidden" id="edit-id">
+                <label style="font-size:12px; font-weight:bold">Description</label>
+                <input type="text" id="add-desc" placeholder="e.g. Astro Bill">
+                <div style="display:flex; gap:10px">
+                    <div style="flex:1"><label style="font-size:11px">Daddy RM</label><input type="number" id="add-dad" oninput="updateAddTotal()"></div>
+                    <div style="flex:1"><label style="font-size:11px">Mommy RM</label><input type="number" id="add-mom" oninput="updateAddTotal()"></div>
+                </div>
+                <p style="text-align:center; font-weight:bold">Total: RM <span id="add-total-display">0.00</span></p>
+                <button id="btn-submit" class="btn btn-primary" onclick="handleSubmission()">Add Submit</button>
+                <button id="btn-cancel" class="btn btn-outline hidden" onclick="resetForm()">Cancel Edit</button>
+            </div>
+
+            <h3 style="margin:30px 15px 5px">Manage All Items</h3>
+            <div id="manage-list-container"></div>
+        </div>
+
+        <!-- SECTION: SETTINGS -->
+        <div id="section-settings" class="content-section hidden">
+            <h3 style="margin:20px 15px 5px">Settings</h3>
+            <div class="summary-card">
+                <label style="font-size:12px">Daddy Income (RM)</label><input type="number" id="set-dad-inc">
+                <label style="font-size:12px">Mommy Income (RM)</label><input type="number" id="set-mom-inc">
+                <button class="btn btn-primary" onclick="saveSettings()">Save Income</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let state = JSON.parse(localStorage.getItem('family_budget_app')) || { incomes: { Daddy: 0, Mommy: 0 }, commitments: [] };
+        let activeUser = "";
+
+        function verifyPassword() {
+            if (document.getElementById('input-pass').value === "Ayleenzenia") {
+                document.getElementById('page-login').classList.add('hidden');
+                document.getElementById('page-user-select').classList.remove('hidden');
+            } else { document.getElementById('login-error').style.display = 'block'; }
+        }
+
+        function selectUser(user) {
+            activeUser = user;
+            document.getElementById('display-username').innerText = user;
+            document.getElementById('display-username').style.color = (user === 'Daddy') ? 'var(--daddy)' : 'var(--mommy)';
+            document.getElementById('page-user-select').classList.add('hidden');
+            document.getElementById('main-app').style.display = 'block';
+            refreshUI();
+        }
+
+        function logout() { location.reload(); }
+        function toggleDropdown() { const dd = document.getElementById('nav-dropdown'); dd.style.display = (dd.style.display === 'block') ? 'none' : 'block'; }
+        
+        function showSection(id) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById('section-' + id).classList.remove('hidden');
+            if (document.getElementById('nav-dropdown').style.display === 'block') toggleDropdown();
+            resetForm(); 
+            refreshUI();
+        }
+
+        function updateAddTotal() {
+            const d = parseFloat(document.getElementById('add-dad').value) || 0;
+            const m = parseFloat(document.getElementById('add-mom').value) || 0;
+            document.getElementById('add-total-display').innerText = (d + m).toFixed(2);
+        }
+
+        function handleSubmission() {
+            const id = document.getElementById('edit-id').value;
+            const desc = document.getElementById('add-desc').value;
+            const d = parseFloat(document.getElementById('add-dad').value) || 0;
+            const m = parseFloat(document.getElementById('add-mom').value) || 0;
+
+            if (!desc) return alert("Enter description");
+
+            if (id) { // UPDATE
+                const index = state.commitments.findIndex(c => c.id == id);
+                state.commitments[index] = { ...state.commitments[index], desc, Daddy: d, Mommy: m };
+            } else { // NEW
+                state.commitments.push({ id: Date.now(), desc, Daddy: d, Mommy: m, paid: false });
+            }
+            save();
+            resetForm();
+            refreshUI();
+        }
+
+        function editItem(id) {
+            const item = state.commitments.find(c => c.id == id);
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('add-desc').value = item.desc;
+            document.getElementById('add-dad').value = item.Daddy;
+            document.getElementById('add-mom').value = item.Mommy;
+            
+            document.getElementById('form-title').innerText = "Editing Item";
+            document.getElementById('btn-submit').innerText = "Update Item";
+            document.getElementById('btn-submit').className = "btn btn-update";
+            document.getElementById('btn-cancel').classList.remove('hidden');
+            document.getElementById('form-container').style.border = "2px solid var(--warning)";
+            updateAddTotal();
+            window.scrollTo(0,0);
+        }
+
+        function resetForm() {
+            document.getElementById('edit-id').value = "";
+            document.getElementById('add-desc').value = "";
+            document.getElementById('add-dad').value = "";
+            document.getElementById('add-mom').value = "";
+            document.getElementById('form-title').innerText = "Add Commitment";
+            document.getElementById('btn-submit').innerText = "Add Submit";
+            document.getElementById('btn-submit').className = "btn btn-primary";
+            document.getElementById('btn-cancel').classList.add('hidden');
+            document.getElementById('form-container').style.border = "none";
+            updateAddTotal();
+        }
+
+        function deleteItem(id) {
+            if(confirm("Are you sure?")) {
+                state.commitments = state.commitments.filter(c => c.id != id);
+                save();
+                refreshUI();
+            }
+        }
+
+        function togglePaid(id) {
+            const item = state.commitments.find(c => c.id == id);
+            item.paid = !item.paid;
+            save();
+            refreshUI();
+        }
+
+        function save() { localStorage.setItem('family_budget_app', JSON.stringify(state)); }
+
+        function refreshUI() {
+            let totalPaid = 0, totalDue = 0;
+            const checkContainer = document.getElementById('checklist-container');
+            const manageContainer = document.getElementById('manage-list-container');
+            checkContainer.innerHTML = ""; manageContainer.innerHTML = "";
+
+            state.commitments.forEach(item => {
+                const combined = item.Daddy + item.Mommy;
+                if (item.paid) totalPaid += combined; else totalDue += combined;
+
+                // Checklist View
+                const divCheck = document.createElement('div');
+                divCheck.className = `item-row ${item.paid ? 'paid-item' : ''}`;
+                divCheck.innerHTML = `<input type="checkbox" class="checkbox-round" ${item.paid ? 'checked' : ''} onchange="togglePaid(${item.id})">
+                    <div style="flex-grow:1"><span style="font-weight:bold">${item.desc}</span><br><span style="font-size:11px">Your Share: RM ${item[activeUser].toFixed(2)}</span></div>
+                    <div style="font-weight:bold">RM ${combined.toFixed(2)}</div>`;
+                checkContainer.appendChild(divCheck);
+
+                // Manage View (on Add Page)
+                const divManage = document.createElement('div');
+                divManage.className = "item-row edit-list-item";
+                divManage.innerHTML = `<div style="width:100%; display:flex; justify-content:space-between">
+                    <span style="font-weight:bold">${item.desc}</span><span>RM ${combined.toFixed(2)}</span>
+                    </div><div style="font-size:11px; color:#666">D: RM ${item.Daddy} | M: RM ${item.Mommy}</div>
+                    <div class="edit-actions">
+                        <button class="action-btn btn-edit" onclick="editItem(${item.id})">Edit</button>
+                        <button class="action-btn btn-del" onclick="deleteItem(${item.id})">Del</button>
+                    </div>`;
+                manageContainer.appendChild(divManage);
+            });
+
+            document.getElementById('combined-paid').innerText = "RM " + totalPaid.toFixed(2);
+            document.getElementById('combined-due').innerText = "RM " + totalDue.toFixed(2);
+            document.getElementById('combined-left').innerText = "RM " + ((state.incomes.Daddy + state.incomes.Mommy) - totalPaid).toFixed(2);
+            document.getElementById('set-dad-inc').value = state.incomes.Daddy;
+            document.getElementById('set-mom-inc').value = state.incomes.Mommy;
+        }
+
+        function saveSettings() {
+            state.incomes.Daddy = parseFloat(document.getElementById('set-dad-inc').value) || 0;
+            state.incomes.Mommy = parseFloat(document.getElementById('set-mom-inc').value) || 0;
+            save(); alert("Saved"); showSection('home');
+        }
+    </script>
+</body>
+</html>
